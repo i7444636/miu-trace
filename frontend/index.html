@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#ffffff">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="assets/app.css">
+  <link rel="stylesheet" href="assets/details.css">
   <title>MIU Trace</title>
 </head>
 <body>
@@ -28,7 +29,7 @@
     <section class="search-panel" aria-labelledby="search-title">
       <div class="panel-heading">
         <div><h2 id="search-title">바코드 조회</h2><p>대소문자와 앞뒤 공백은 자동으로 정리됩니다.</p></div>
-        <span class="mode-badge">Google Beta</span>
+        <span class="mode-badge">Full Beta</span>
       </div>
       <form id="search">
         <label class="sr-only" for="barcode">상품 바코드</label>
@@ -38,7 +39,7 @@
           <button type="submit">조회</button>
         </div>
       </form>
-      <p class="demo-hint"><span></span>실데이터 베타: <button type="button" id="demo-code">C24306</button>, HK30034, YH25032085</p>
+      <p class="demo-hint"><span></span>전체 원장 검색 가능 · 예시: <button type="button" id="demo-code">HK30034</button></p>
     </section>
 
     <section id="result" aria-live="polite"></section>

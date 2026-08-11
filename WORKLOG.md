@@ -98,3 +98,12 @@ Each completed milestone is committed independently to `main` while the beta is 
 - `HK30034` appears in the 2026 sales authority with a positive transaction and a later `-1` reversal; these rows require transaction-aware pairing before publication.
 - Google Sheets events remain date-precision records. The beta does not invent times that are absent from the source.
 - Raw workbooks and Dropbox credentials remain outside the repository.
+
+## Full beta integration
+
+- Added recursive Dropbox workbook discovery and revision-aware local caching.
+- Added authority-aware parsing for official receiving, finalized sales/refunds, and uncovered-period sales fallback.
+- Added monthly snapshot comparison for ranged location, price, status, and product-information changes.
+- Added a SQLite barcode index so arbitrary product lookups do not load or expose the complete company dataset.
+- Added live per-barcode Google Sheets evidence lookup, current product state, details, event counts, and Korean summary output.
+- Added an HTTPS reverse proxy deployment for the Oracle `automation-runner`; Dropbox credentials and the full index remain server-side.

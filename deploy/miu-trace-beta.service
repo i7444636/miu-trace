@@ -10,6 +10,7 @@ Group=miutrace
 WorkingDirectory=/opt/miu-trace
 Environment=PYTHONUNBUFFERED=1
 Environment=MIU_TRACE_DATA=/opt/miu-trace/frontend/data/beta-events.json
+Environment=MIU_TRACE_INDEX=/opt/miu-trace/var/dropbox-index.sqlite
 ExecStart=/opt/miu-trace/.venv/bin/uvicorn backend.app.main:app --host 127.0.0.1 --port 8010
 Restart=on-failure
 RestartSec=5
@@ -17,8 +18,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/opt/miu-trace/frontend/data
+ReadOnlyPaths=/opt/miu-trace/var
 
 [Install]
 WantedBy=multi-user.target
-
