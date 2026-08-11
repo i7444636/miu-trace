@@ -105,6 +105,23 @@ def money(value):
         return None
 
 
+def information_changes(before, after):
+    labels = {"description": "상품명/설명", "category": "카테고리"}
+    changes = []
+    for field, label in labels.items():
+        old, new = before.get(field), after.get(field)
+        if old == new:
+            continue
+        if old and not new:
+            kind = "MISSING"
+        elif not old and new:
+            kind = "RESTORED"
+        else:
+            kind = "CHANGED"
+        changes.append({"field": field, "label": label, "before": old, "after": new, "kind": kind})
+    return changes
+
+
 def build_index(paths: list[Path]):
     snapshots = defaultdict(list)
     sales = defaultdict(list)
@@ -126,7 +143,6 @@ def build_index(paths: list[Path]):
                         "description": str(values.get(4, "")).strip() or None,
                         "price": money(values.get(5)), "quantity": money(values.get(6)),
                         "category": str(values.get(8, "")).strip() or None,
-                        "round": str(values.get(9, "")).strip() or None,
                         "updated_at": excel_date(values.get(15)), "source_file": path.name,
                         "sheet": sheet, "row": row,
                     })
@@ -181,7 +197,7 @@ def build_index(paths: list[Path]):
         ordered = sorted(unique.values(), key=lambda item: item.get("as_of") or "")
         latest = ordered[-1]
         status = "폐기" if latest.get("location") == "폐기" else "판매됨" if any(e["type"] == "SOLD" for e in sales.get(code, [])) and not any(e["type"] == "REFUND" for e in sales.get(code, [])) else "보유"
-        products[code] = {key: latest.get(key) for key in ("barcode", "received_at", "location", "description", "price", "quantity", "category", "round", "updated_at")}
+        products[code] = {key: latest.get(key) for key in ("barcode", "received_at", "location", "description", "price", "quantity", "category", "updated_at")}
         products[code]["status"] = status
         received = next((item.get("received_at") for item in ordered if item.get("received_at")), None)
         if received:
@@ -197,9 +213,12 @@ def build_index(paths: list[Path]):
                 events.append({"barcode": code, "type": event_type, "label": "폐기" if event_type == "DISCARDED" else "위치 이동", "from": time_from, "to": time_to, "precision": "RANGE", "confidence": "HIGH", "before": before.get("location"), "after": after.get("location"), "source_family": "DROPBOX_COMMON_SALES", "evidence": f"Dropbox 월별 입고 스냅샷 비교 · {before['source_file']} → {after['source_file']}"})
             if before.get("price") != after.get("price") and after.get("price") is not None:
                 events.append({"barcode": code, "type": "PRICE_CHANGE", "label": "가격 변경", "from": time_from, "to": time_to, "precision": "RANGE", "confidence": "HIGH", "before": before.get("price"), "after": after.get("price"), "location": after.get("location"), "source_family": "DROPBOX_COMMON_SALES", "evidence": f"Dropbox 월별 입고 스냅샷 비교 · {before['source_file']} → {after['source_file']}"})
-            changed = [field for field in ("description", "category", "round") if before.get(field) != after.get(field)]
-            if changed:
-                events.append({"barcode": code, "type": "INFO_CHANGE", "label": "상품 정보 수정", "from": time_from, "to": time_to, "precision": "RANGE", "confidence": "HIGH", "details": changed, "source_family": "DROPBOX_COMMON_SALES", "evidence": f"Dropbox 월별 입고 스냅샷 비교 · {before['source_file']} → {after['source_file']}"})
+            changes = information_changes(before, after)
+            if changes:
+                kinds = {change["kind"] for change in changes}
+                label = "상품 정보 수정" if kinds == {"CHANGED"} else "정보 누락/복원 가능성"
+                confidence = "HIGH" if kinds == {"CHANGED"} else "MEDIUM"
+                events.append({"barcode": code, "type": "INFO_CHANGE", "label": label, "from": time_from, "to": time_to, "precision": "RANGE", "confidence": confidence, "changes": changes, "source_family": "DROPBOX_COMMON_SALES", "evidence": f"Dropbox 월별 입고 스냅샷 비교 · {before['source_file']} → {after['source_file']}"})
 
     sales_keys = set()
     for code, rows in sales.items():
