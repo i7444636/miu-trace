@@ -1,0 +1,2 @@
+window.MIU_TRACE_CONFIG={API_BASE_URL:"",DEMO_MODE:true};
+

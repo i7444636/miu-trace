@@ -1,0 +1,17 @@
+dropbox:
+  common_sales:
+    source_family: DROPBOX_COMMON_SALES
+    root_path: /공동판매_auto
+    receiving_sheet: 입고
+    current_sales_sheet: 전매장매출
+  store_sales:
+    source_family: DROPBOX_STORE_SALES
+    root_path: /전매장매입매출_auto용_수빈
+    finalized_sales_sheet: 매출
+google_sheets:
+  - {id: google_sheet_01, spreadsheet_id: 1CTbxn5MdvSaxlukEOBVlIzqPgFJn5wAaczE8-V4o4PI, gid: 2034797578}
+  - {id: google_sheet_02, spreadsheet_id: 1g2an-a3jnyDR9XTrCn_4bg-JEyinWaVW2yuLtRlvARU, gid: 695209773}
+  - {id: google_sheet_03, spreadsheet_id: 19d7I0iczbb8oaVmoTejAU2BxdnZDkm-DJhoVN4Pd1b4, gid: 695209773}
+  - {id: google_sheet_04, spreadsheet_id: 1oEm00RGr3KL0fFx0HTXdFX855_DlMeHzjryZk_i89tc, gid: 1452196397}
+  - {id: google_sheet_05, spreadsheet_id: 1-tpMUl-MRmdMzVLE7F637FVBOhSjkWA1rQLT0_-H67I, gid: 695209773}
+
