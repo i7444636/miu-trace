@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-11T14:19:53+09:00",
+  "generated_at": "2026-08-11T07:39:44+00:00",
   "mode": "PUBLIC_GOOGLE_SHEETS_BETA",
   "barcodes": [
     "C24306",
@@ -504,24 +504,10 @@
     },
     {
       "source_id": "google_sheet_01",
-      "worksheet": "25/02",
-      "status": "INDEXED",
-      "rows": 1292,
-      "events": 0
-    },
-    {
-      "source_id": "google_sheet_01",
       "worksheet": "25/03",
       "status": "INDEXED",
       "rows": 2007,
       "events": 0
-    },
-    {
-      "source_id": "google_sheet_01",
-      "worksheet": "25/04",
-      "status": "INDEXED",
-      "rows": 2218,
-      "events": 1
     },
     {
       "source_id": "google_sheet_01",
@@ -539,17 +525,24 @@
     },
     {
       "source_id": "google_sheet_01",
+      "worksheet": "25/02",
+      "status": "INDEXED",
+      "rows": 1292,
+      "events": 0
+    },
+    {
+      "source_id": "google_sheet_01",
       "worksheet": "25/07",
       "status": "INDEXED",
       "rows": 3134,
       "events": 6
     },
     {
-      "source_id": "google_sheet_02",
-      "worksheet": "25/08",
+      "source_id": "google_sheet_01",
+      "worksheet": "25/04",
       "status": "INDEXED",
-      "rows": 2528,
-      "events": 5
+      "rows": 2218,
+      "events": 1
     },
     {
       "source_id": "google_sheet_02",
@@ -560,10 +553,10 @@
     },
     {
       "source_id": "google_sheet_02",
-      "worksheet": "25/10",
+      "worksheet": "25/08",
       "status": "INDEXED",
-      "rows": 2363,
-      "events": 1
+      "rows": 2528,
+      "events": 5
     },
     {
       "source_id": "google_sheet_02",
@@ -574,24 +567,24 @@
     },
     {
       "source_id": "google_sheet_02",
+      "worksheet": "25/10",
+      "status": "INDEXED",
+      "rows": 2363,
+      "events": 1
+    },
+    {
+      "source_id": "google_sheet_02",
       "worksheet": "25/12",
       "status": "INDEXED",
       "rows": 3069,
       "events": 0
     },
     {
-      "source_id": "google_sheet_03",
-      "worksheet": "26/01",
+      "source_id": "google_sheet_04",
+      "worksheet": "26/04_2",
       "status": "INDEXED",
-      "rows": 1837,
+      "rows": 730,
       "events": 0
-    },
-    {
-      "source_id": "google_sheet_03",
-      "worksheet": "26/02",
-      "status": "INDEXED",
-      "rows": 2058,
-      "events": 1
     },
     {
       "source_id": "google_sheet_03",
@@ -608,17 +601,17 @@
       "events": 1
     },
     {
-      "source_id": "google_sheet_04",
-      "worksheet": "26/04_2",
+      "source_id": "google_sheet_03",
+      "worksheet": "26/01",
       "status": "INDEXED",
-      "rows": 730,
+      "rows": 1837,
       "events": 0
     },
     {
-      "source_id": "google_sheet_05",
-      "worksheet": "공동물류",
+      "source_id": "google_sheet_03",
+      "worksheet": "26/02",
       "status": "INDEXED",
-      "rows": 830,
+      "rows": 2058,
       "events": 1
     },
     {
@@ -626,6 +619,13 @@
       "worksheet": "온라인",
       "status": "INDEXED",
       "rows": 265,
+      "events": 1
+    },
+    {
+      "source_id": "google_sheet_05",
+      "worksheet": "공동물류",
+      "status": "INDEXED",
+      "rows": 830,
       "events": 1
     }
   ]
