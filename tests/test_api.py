@@ -18,3 +18,4 @@ def test_known_barcode_timeline_is_chronological():
     assert all(event["from"] >= payload["product"]["received_at"] for event in events)
     assert events[1]["from"]=="2025-06-25"
     assert not any(event.get("precision")=="RANGE" and event["type"]=="LOCATION_CHANGE" for event in events)
+    assert not any(event.get("precision")=="RANGE" and event["type"]=="PRICE_CHANGE" for event in events)

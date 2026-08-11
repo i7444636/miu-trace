@@ -6,7 +6,7 @@ import re
 import sqlite3
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -96,9 +96,14 @@ def enforce_lifecycle(events, product):
     reconciled = []
     for event in result:
         inferred_snapshot = event.get("precision") == "RANGE" and event.get("source_family") == "DROPBOX_COMMON_SALES"
+        comparison_to = event.get("to") or ""
+        if comparison_to:
+            boundary = date.fromisoformat(comparison_to)
+            next_month = date(boundary.year + (boundary.month == 12), 1 if boundary.month == 12 else boundary.month + 1, 1)
+            comparison_to = (next_month - timedelta(days=1)).isoformat()
         superseded = inferred_snapshot and any(
             exact.get("type") == event.get("type")
-            and (event.get("from") or "") <= (exact.get("from") or "") <= (event.get("to") or "")
+            and (event.get("from") or "") <= (exact.get("from") or "") <= comparison_to
             for exact in precise
         )
         if not superseded:
