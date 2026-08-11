@@ -1,5 +1,51 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#12261e"><link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="assets/app.css"><title>MIU Trace</title></head><body>
-<header><a class="brand" href="./"><b>MIU</b> Trace</a><a href="sources.html">소스 진단</a></header><main><section class="hero"><p class="eyebrow">EVIDENCE-FIRST HISTORY</p><h1>상품의 기록을<br>근거부터 추적합니다.</h1><p>결과, 시간, 원본 근거와 신뢰도를 한 타임라인에서 확인하세요.</p></section>
-<form id="search"><label for="barcode">상품 바코드</label><div class="search"><input id="barcode" placeholder="예: C24304" autocomplete="off"><button>조회</button></div></form><p class="notice">현재 GitHub Pages는 데모 모드입니다. <b>C24304</b>를 검색해 보세요.</p><section id="result" aria-live="polite"></section></main>
-<script src="config.js"></script><script src="assets/app.js"></script></body></html>
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="assets/app.css">
+  <title>MIU Trace</title>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="./" aria-label="MIU Trace 홈">
+        <span class="brand-mark">M</span><span>MIU Trace</span>
+      </a>
+      <nav><a class="nav-link" href="sources.html">소스 진단</a></nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro">
+      <span class="section-kicker">Product history</span>
+      <h1>상품 이력을<br>하나의 흐름으로.</h1>
+      <p>입고부터 이동, 가격 변경, 판매와 환불까지<br class="desktop-break"> 원본 근거와 신뢰도를 시간순으로 확인합니다.</p>
+    </section>
+
+    <section class="search-panel" aria-labelledby="search-title">
+      <div class="panel-heading">
+        <div><h2 id="search-title">바코드 조회</h2><p>대소문자와 앞뒤 공백은 자동으로 정리됩니다.</p></div>
+        <span class="mode-badge">Demo</span>
+      </div>
+      <form id="search">
+        <label class="sr-only" for="barcode">상품 바코드</label>
+        <div class="search-control">
+          <svg aria-hidden="true" viewBox="0 0 16 16"><path d="M11.5 7a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Zm-.82 4.74 2.79 2.79 1.06-1.06-2.79-2.79a6 6 0 1 0-1.06 1.06Z"/></svg>
+          <input id="barcode" placeholder="바코드를 입력하세요 (예: C24304)" autocomplete="off" autofocus>
+          <button type="submit">조회</button>
+        </div>
+      </form>
+      <p class="demo-hint"><span></span>데모 바코드 <button type="button" id="demo-code">C24304</button>로 결과를 확인할 수 있습니다.</p>
+    </section>
+
+    <section id="result" aria-live="polite"></section>
+  </main>
+
+  <footer><span>MIU Trace</span><span>Evidence-first product history</span></footer>
+  <script src="config.js"></script><script src="assets/app.js"></script>
+</body>
+</html>
 
