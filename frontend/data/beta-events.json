@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-11T07:39:44+00:00",
+  "generated_at": "2026-08-11T13:45:38+00:00",
   "mode": "PUBLIC_GOOGLE_SHEETS_BETA",
   "barcodes": [
     "C24306",
@@ -497,13 +497,6 @@
   "diagnostics": [
     {
       "source_id": "google_sheet_01",
-      "worksheet": "25/01",
-      "status": "INDEXED",
-      "rows": 1407,
-      "events": 0
-    },
-    {
-      "source_id": "google_sheet_01",
       "worksheet": "25/03",
       "status": "INDEXED",
       "rows": 2007,
@@ -511,17 +504,10 @@
     },
     {
       "source_id": "google_sheet_01",
-      "worksheet": "25/05",
+      "worksheet": "25/01",
       "status": "INDEXED",
-      "rows": 1987,
-      "events": 4
-    },
-    {
-      "source_id": "google_sheet_01",
-      "worksheet": "25/06",
-      "status": "INDEXED",
-      "rows": 3618,
-      "events": 4
+      "rows": 1407,
+      "events": 0
     },
     {
       "source_id": "google_sheet_01",
@@ -532,17 +518,10 @@
     },
     {
       "source_id": "google_sheet_01",
-      "worksheet": "25/07",
+      "worksheet": "25/06",
       "status": "INDEXED",
-      "rows": 3134,
-      "events": 6
-    },
-    {
-      "source_id": "google_sheet_01",
-      "worksheet": "25/04",
-      "status": "INDEXED",
-      "rows": 2218,
-      "events": 1
+      "rows": 3618,
+      "events": 4
     },
     {
       "source_id": "google_sheet_02",
@@ -552,18 +531,18 @@
       "events": 0
     },
     {
-      "source_id": "google_sheet_02",
-      "worksheet": "25/08",
+      "source_id": "google_sheet_01",
+      "worksheet": "25/04",
       "status": "INDEXED",
-      "rows": 2528,
-      "events": 5
+      "rows": 2218,
+      "events": 1
     },
     {
-      "source_id": "google_sheet_02",
-      "worksheet": "25/11",
+      "source_id": "google_sheet_01",
+      "worksheet": "25/05",
       "status": "INDEXED",
-      "rows": 2781,
-      "events": 1
+      "rows": 1987,
+      "events": 4
     },
     {
       "source_id": "google_sheet_02",
@@ -574,10 +553,38 @@
     },
     {
       "source_id": "google_sheet_02",
+      "worksheet": "25/11",
+      "status": "INDEXED",
+      "rows": 2781,
+      "events": 1
+    },
+    {
+      "source_id": "google_sheet_01",
+      "worksheet": "25/07",
+      "status": "INDEXED",
+      "rows": 3134,
+      "events": 6
+    },
+    {
+      "source_id": "google_sheet_02",
+      "worksheet": "25/08",
+      "status": "INDEXED",
+      "rows": 2528,
+      "events": 5
+    },
+    {
+      "source_id": "google_sheet_02",
       "worksheet": "25/12",
       "status": "INDEXED",
       "rows": 3069,
       "events": 0
+    },
+    {
+      "source_id": "google_sheet_03",
+      "worksheet": "26/04",
+      "status": "INDEXED",
+      "rows": 1001,
+      "events": 1
     },
     {
       "source_id": "google_sheet_04",
@@ -595,9 +602,9 @@
     },
     {
       "source_id": "google_sheet_03",
-      "worksheet": "26/04",
+      "worksheet": "26/02",
       "status": "INDEXED",
-      "rows": 1001,
+      "rows": 2058,
       "events": 1
     },
     {
@@ -606,13 +613,6 @@
       "status": "INDEXED",
       "rows": 1837,
       "events": 0
-    },
-    {
-      "source_id": "google_sheet_03",
-      "worksheet": "26/02",
-      "status": "INDEXED",
-      "rows": 2058,
-      "events": 1
     },
     {
       "source_id": "google_sheet_05",
