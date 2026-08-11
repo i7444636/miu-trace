@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh MIU Trace public Google Sheets beta index
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=miutrace
+Group=miutrace
+WorkingDirectory=/opt/miu-trace
+ExecStart=/opt/miu-trace/.venv/bin/python scripts/sync_google_beta.py
+ReadWritePaths=/opt/miu-trace/frontend/data

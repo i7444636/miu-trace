@@ -1,0 +1,12 @@
+[Unit]
+Description=Refresh MIU Trace beta index every six hours
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=6h
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target
+

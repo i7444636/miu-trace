@@ -12,6 +12,7 @@ Last updated: 2026-08-11 (Asia/Seoul)
 - Each event links back to its source spreadsheet and reports `DATE/HIGH`; no exact time is invented.
 - GitHub Actions refreshes the public beta index every six hours and on manual dispatch.
 - Still pending: authoritative Dropbox receiving/sales/refund events and the full Oracle-hosted index API.
+- Beta API prepared for `automation-runner` as an isolated systemd service on `127.0.0.1:8010`, with a six-hour Google sync timer.
 
 Observed beta counts:
 
@@ -89,3 +90,11 @@ The deployed page is currently in `DEMO_MODE`. Google Sheets and Dropbox are not
 ## Commit policy
 
 Each completed milestone is committed independently to `main` while the beta is being assembled. Secrets, service-account JSON, Dropbox tokens and raw company data are never committed.
+
+## 2026-08-11 Dropbox audit
+
+- Scanned the three requested barcodes across the monthly `입고`, `전매장매출`, and annual `매출` workbooks.
+- Monthly `입고` rows are rolling product snapshots and must not be emitted as repeated timeline events.
+- `HK30034` appears in the 2026 sales authority with a positive transaction and a later `-1` reversal; these rows require transaction-aware pairing before publication.
+- Google Sheets events remain date-precision records. The beta does not invent times that are absent from the source.
+- Raw workbooks and Dropbox credentials remain outside the repository.

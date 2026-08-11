@@ -1,0 +1,24 @@
+[Unit]
+Description=MIU Trace Beta API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=miutrace
+Group=miutrace
+WorkingDirectory=/opt/miu-trace
+Environment=PYTHONUNBUFFERED=1
+Environment=MIU_TRACE_DATA=/opt/miu-trace/frontend/data/beta-events.json
+ExecStart=/opt/miu-trace/.venv/bin/uvicorn backend.app.main:app --host 127.0.0.1 --port 8010
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/miu-trace/frontend/data
+
+[Install]
+WantedBy=multi-user.target
+
