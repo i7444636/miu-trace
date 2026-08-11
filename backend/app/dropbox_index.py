@@ -188,6 +188,10 @@ def build_index(paths: list[Path]):
             events.append({"barcode": code, "type": "RECEIVED", "label": "정식 입고", "from": received, "precision": "DATE", "confidence": "CONFIRMED", "after": ordered[0].get("location"), "price": ordered[0].get("price"), "source_family": "DROPBOX_COMMON_SALES", "source_file": ordered[0]["source_file"], "worksheet": "입고", "row": ordered[0]["row"], "evidence": f"Dropbox 공식 입고 · {ordered[0]['source_file']} · 입고 {ordered[0]['row']}행"})
         for before, after in zip(ordered, ordered[1:]):
             time_from, time_to = before.get("as_of"), after.get("as_of")
+            if received and time_from and time_from < received:
+                time_from = received
+            if time_from and time_to and time_to <= time_from:
+                continue
             if before.get("location") != after.get("location"):
                 event_type = "DISCARDED" if after.get("location") == "폐기" else "LOCATION_CHANGE"
                 events.append({"barcode": code, "type": event_type, "label": "폐기" if event_type == "DISCARDED" else "위치 이동", "from": time_from, "to": time_to, "precision": "RANGE", "confidence": "HIGH", "before": before.get("location"), "after": after.get("location"), "source_family": "DROPBOX_COMMON_SALES", "evidence": f"Dropbox 월별 입고 스냅샷 비교 · {before['source_file']} → {after['source_file']}"})

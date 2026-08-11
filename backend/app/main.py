@@ -22,6 +22,7 @@ app = FastAPI(title="MIU Trace Beta API", version="0.9.0")
 app.add_middleware(CORSMiddleware, allow_origins=[PAGES_ORIGIN], allow_methods=["GET"], allow_headers=["*"])
 google_cache = {}
 google_lock = threading.Lock()
+EVENT_ORDER = {"RECEIVED": 0, "LOCATION_CHANGE": 10, "DISCARDED": 11, "STATUS_CHANGE": 12, "INFO_CHANGE": 20, "PRICE_CHANGE": 30, "SOLD": 40, "REFUND": 50}
 
 
 def normalize(value: str) -> str:
@@ -68,11 +69,41 @@ def google_events(code):
 def dedupe(events):
     result, seen = [], set()
     priority = {"CONFIRMED": 3, "HIGH": 2, "MEDIUM": 1, "LOW": 0}
-    for event in sorted(events, key=lambda item: (item.get("from") or "", -priority.get(item.get("confidence"), 0))):
+    for event in sorted(events, key=lambda item: (item.get("from") or "", EVENT_ORDER.get(item.get("type"), 99), -priority.get(item.get("confidence"), 0))):
         key = (event.get("type"), event.get("from"), event.get("to"), str(event.get("before")), str(event.get("after")), event.get("location"), event.get("quantity"))
         if key not in seen:
             seen.add(key); result.append(event)
     return result
+
+
+def enforce_lifecycle(events, product):
+    """Do not display snapshot inferences before the authoritative receiving date."""
+    received = (product or {}).get("received_at")
+    if not received:
+        return sorted(events, key=lambda item: (item.get("from") or "", EVENT_ORDER.get(item.get("type"), 99)))
+    result = []
+    for original in events:
+        event = dict(original)
+        inferred_snapshot = event.get("precision") == "RANGE" and event.get("source_family") == "DROPBOX_COMMON_SALES"
+        if inferred_snapshot and (event.get("from") or "") < received:
+            if event.get("to") and event["to"] > received:
+                event["from"] = received
+                event["evidence"] = event.get("evidence", "") + " · 공식 입고일 이전 구간 제외"
+            else:
+                continue
+        result.append(event)
+    precise = [event for event in result if event.get("precision") != "RANGE"]
+    reconciled = []
+    for event in result:
+        inferred_snapshot = event.get("precision") == "RANGE" and event.get("source_family") == "DROPBOX_COMMON_SALES"
+        superseded = inferred_snapshot and any(
+            exact.get("type") == event.get("type")
+            and (event.get("from") or "") <= (exact.get("from") or "") <= (event.get("to") or "")
+            for exact in precise
+        )
+        if not superseded:
+            reconciled.append(event)
+    return sorted(reconciled, key=lambda item: (item.get("from") or "", EVENT_ORDER.get(item.get("type"), 99), item.get("to") or ""))
 
 
 def summarize(code, product, events):
@@ -112,7 +143,7 @@ def timeline(barcode: str):
     product, dropbox, meta = index_query(code)
     static = [event for event in static_payload().get("events", []) if event.get("barcode") == code]
     live_google, google_diagnostics = ([], []) if static else google_events(code)
-    events = dedupe(dropbox + static + live_google)
+    events = enforce_lifecycle(dedupe(dropbox + static + live_google), product)
     summary, counts = summarize(code, product, events)
     return {"barcode": code, "found": bool(product or events), "product": product, "current_state": {"location": (product or {}).get("location"), "status": (product or {}).get("status"), "price": (product or {}).get("price"), "updated_at": (product or {}).get("updated_at")}, "summary": summary, "counts": counts, "events": events, "count": len(events), "generated_at": meta.get("generated_at") or static_payload().get("generated_at"), "sales_coverage_end": meta.get("sales_coverage_end"), "google_diagnostics": google_diagnostics}
 
