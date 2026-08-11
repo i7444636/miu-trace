@@ -19,3 +19,11 @@ def test_known_barcode_timeline_is_chronological():
     assert events[1]["from"]=="2025-06-25"
     assert not any(event.get("precision")=="RANGE" and event["type"]=="LOCATION_CHANGE" for event in events)
     assert not any(event.get("precision")=="RANGE" and event["type"]=="PRICE_CHANGE" for event in events)
+
+
+def test_batch_lookup_deduplicates_codes_and_returns_compact_results():
+    response=TestClient(app).post("/api/barcodes/batch",json={"barcodes":["HK30034"," C24306 ","HK30034"]})
+    assert response.status_code==200
+    payload=response.json()
+    assert payload["requested"]==2
+    assert [item["barcode"] for item in payload["results"]]==["HK30034","C24306"]

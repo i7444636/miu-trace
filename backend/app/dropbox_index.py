@@ -20,6 +20,13 @@ def normalize(value) -> str:
     return re.sub(r"[\u200b-\u200d\ufeff\s]", "", str(value or "")).upper()
 
 
+def normalize_category(value):
+    category = str(value or "").strip() or None
+    if category and category.startswith("온") and len(category) > 1:
+        return category[1:].strip() or None
+    return category
+
+
 def excel_date(value):
     if value in (None, ""):
         return None
@@ -142,7 +149,7 @@ def build_index(paths: list[Path]):
                         "location": str(values.get(2, "")).strip() or None,
                         "description": str(values.get(4, "")).strip() or None,
                         "price": money(values.get(5)), "quantity": money(values.get(6)),
-                        "category": str(values.get(8, "")).strip() or None,
+                        "category": normalize_category(values.get(8)),
                         "updated_at": excel_date(values.get(15)), "source_file": path.name,
                         "sheet": sheet, "row": row,
                     })

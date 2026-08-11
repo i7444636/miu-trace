@@ -11,6 +11,9 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+
+from backend.app.dropbox_index import normalize_category
 
 ROOT = Path(__file__).resolve().parents[2]
 STATIC_DATA = Path(os.getenv("MIU_TRACE_DATA", ROOT / "frontend" / "data" / "beta-events.json"))
@@ -18,11 +21,15 @@ INDEX = Path(os.getenv("MIU_TRACE_INDEX", ROOT / "var" / "dropbox-index.sqlite")
 PAGES_ORIGIN = os.getenv("MIU_TRACE_PAGES_ORIGIN", "https://i7444636.github.io")
 GOOGLE_CACHE_SECONDS = int(os.getenv("MIU_TRACE_GOOGLE_CACHE_SECONDS", "21600"))
 
-app = FastAPI(title="MIU Trace Beta API", version="0.9.0")
-app.add_middleware(CORSMiddleware, allow_origins=[PAGES_ORIGIN], allow_methods=["GET"], allow_headers=["*"])
+app = FastAPI(title="MIU Trace Beta API", version="1.0.0")
+app.add_middleware(CORSMiddleware, allow_origins=[PAGES_ORIGIN], allow_methods=["GET", "POST"], allow_headers=["*"])
 google_cache = {}
 google_lock = threading.Lock()
 EVENT_ORDER = {"RECEIVED": 0, "LOCATION_CHANGE": 10, "DISCARDED": 11, "STATUS_CHANGE": 12, "INFO_CHANGE": 20, "PRICE_CHANGE": 30, "SOLD": 40, "REFUND": 50}
+
+
+class BatchRequest(BaseModel):
+    barcodes: list[str] = Field(min_length=1, max_length=500)
 
 
 def normalize(value: str) -> str:
@@ -42,6 +49,8 @@ def index_query(code):
     connection = sqlite3.connect(f"file:{INDEX.as_posix()}?mode=ro", uri=True)
     row = connection.execute("SELECT payload FROM products WHERE barcode=?", (code,)).fetchone()
     product = json.loads(row[0]) if row else None
+    if product:
+        product["category"] = normalize_category(product.get("category"))
     events = [json.loads(item[0]) for item in connection.execute("SELECT payload FROM events WHERE barcode=? ORDER BY occurred", (code,))]
     meta = dict(connection.execute("SELECT key,value FROM meta WHERE key IN ('generated_at','sales_coverage_end','mode')"))
     connection.close()
@@ -127,6 +136,15 @@ def summarize(code, product, events):
     return " ".join(pieces), counts
 
 
+def build_timeline(code, include_live_google=True):
+    product, dropbox, meta = index_query(code)
+    static = [event for event in static_payload().get("events", []) if event.get("barcode") == code]
+    live_google, google_diagnostics = ([], []) if static or not include_live_google else google_events(code)
+    events = enforce_lifecycle(dedupe(dropbox + static + live_google), product)
+    summary, counts = summarize(code, product, events)
+    return {"barcode": code, "found": bool(product or events), "product": product, "current_state": {"location": (product or {}).get("location"), "status": (product or {}).get("status"), "price": (product or {}).get("price"), "updated_at": (product or {}).get("updated_at")}, "summary": summary, "counts": counts, "events": events, "count": len(events), "generated_at": meta.get("generated_at") or static_payload().get("generated_at"), "sales_coverage_end": meta.get("sales_coverage_end"), "google_diagnostics": google_diagnostics}
+
+
 @app.get("/api/health")
 def health():
     product_count = event_count = 0
@@ -145,12 +163,16 @@ def timeline(barcode: str):
     code = normalize(barcode)
     if not code:
         raise HTTPException(400, "barcode required")
-    product, dropbox, meta = index_query(code)
-    static = [event for event in static_payload().get("events", []) if event.get("barcode") == code]
-    live_google, google_diagnostics = ([], []) if static else google_events(code)
-    events = enforce_lifecycle(dedupe(dropbox + static + live_google), product)
-    summary, counts = summarize(code, product, events)
-    return {"barcode": code, "found": bool(product or events), "product": product, "current_state": {"location": (product or {}).get("location"), "status": (product or {}).get("status"), "price": (product or {}).get("price"), "updated_at": (product or {}).get("updated_at")}, "summary": summary, "counts": counts, "events": events, "count": len(events), "generated_at": meta.get("generated_at") or static_payload().get("generated_at"), "sales_coverage_end": meta.get("sales_coverage_end"), "google_diagnostics": google_diagnostics}
+    return build_timeline(code)
+
+
+@app.post("/api/barcodes/batch")
+def batch_timeline(request: BatchRequest):
+    codes = list(dict.fromkeys(normalize(value) for value in request.barcodes if normalize(value)))
+    if not codes:
+        raise HTTPException(400, "at least one barcode required")
+    results = [build_timeline(code, include_live_google=False) for code in codes]
+    return {"requested": len(codes), "found": sum(item["found"] for item in results), "results": results}
 
 
 @app.get("/api/sources")

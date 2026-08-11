@@ -10,41 +10,29 @@
   <title>MIU Trace</title>
 </head>
 <body>
-  <header class="site-header">
-    <div class="header-inner">
-      <a class="brand" href="./" aria-label="MIU Trace 홈">
-        <span class="brand-mark">M</span><span>MIU Trace</span>
-      </a>
-      <nav><a class="nav-link" href="sources.html">소스 진단</a></nav>
-    </div>
-  </header>
-
+  <header class="site-header"><div class="header-inner"><a class="brand" href="./" aria-label="MIU Trace 홈"><span class="brand-mark">M</span><span>MIU Trace</span></a><nav><a class="nav-link" href="sources.html">소스 진단</a></nav></div></header>
   <main>
-    <section class="intro">
-      <span class="section-kicker">Product history</span>
-      <h1>상품 이력을<br>하나의 흐름으로.</h1>
-      <p>입고부터 이동, 가격 변경, 판매와 환불까지<br class="desktop-break"> 원본 근거와 신뢰도를 시간순으로 확인합니다.</p>
-    </section>
-
+    <section class="intro"><span class="section-kicker">Product history</span><h1>상품 이력을<br>하나의 흐름으로.</h1><p>입고부터 이동, 가격 변경, 판매와 환불까지<br class="desktop-break"> 원본 근거와 신뢰도를 시간순으로 확인합니다.</p></section>
     <section class="search-panel" aria-labelledby="search-title">
-      <div class="panel-heading">
-        <div><h2 id="search-title">바코드 조회</h2><p>대소문자와 앞뒤 공백은 자동으로 정리됩니다.</p></div>
-        <span class="mode-badge">Full Beta</span>
+      <div class="panel-heading"><div><h2 id="search-title">바코드 조회</h2><p>한 건은 상세하게, 여러 건은 접어서 빠르게 확인합니다.</p></div><span class="mode-badge">Full Beta</span></div>
+      <div class="search-tabs" role="tablist" aria-label="조회 방식">
+        <button class="search-tab active" id="single-tab" role="tab" aria-selected="true" aria-controls="single-search" data-mode="single">바코드 조회</button>
+        <button class="search-tab" id="bulk-tab" role="tab" aria-selected="false" aria-controls="bulk-search" data-mode="bulk">대량 검색</button>
       </div>
-      <form id="search">
+      <form id="single-search" class="search-mode" role="tabpanel" aria-labelledby="single-tab">
         <label class="sr-only" for="barcode">상품 바코드</label>
-        <div class="search-control">
-          <svg aria-hidden="true" viewBox="0 0 16 16"><path d="M11.5 7a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Zm-.82 4.74 2.79 2.79 1.06-1.06-2.79-2.79a6 6 0 1 0-1.06 1.06Z"/></svg>
-          <input id="barcode" placeholder="바코드를 입력하세요 (예: C24304)" autocomplete="off" autofocus>
-          <button type="submit">조회</button>
-        </div>
+        <div class="search-control"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M11.5 7a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Zm-.82 4.74 2.79 2.79 1.06-1.06-2.79-2.79a6 6 0 1 0-1.06 1.06Z"/></svg><input id="barcode" placeholder="바코드를 입력하세요 (예: HK30034)" autocomplete="off" autofocus><button type="submit">조회</button></div>
+        <p class="demo-hint"><span></span>전체 원장 검색 가능 · 예시: <button type="button" id="demo-code">HK30034</button></p>
       </form>
-      <p class="demo-hint"><span></span>전체 원장 검색 가능 · 예시: <button type="button" id="demo-code">HK30034</button></p>
+      <form id="bulk-search" class="search-mode" role="tabpanel" aria-labelledby="bulk-tab" hidden>
+        <label for="barcodes">바코드 목록</label>
+        <textarea id="barcodes" rows="7" placeholder="줄바꿈, 쉼표 또는 공백으로 구분하세요.&#10;HK30034&#10;C24306&#10;YH25032085"></textarea>
+        <div class="bulk-actions"><span id="bulk-count">0개 입력</span><button type="submit">한번에 조회</button></div>
+        <p class="bulk-note">중복은 자동 제거되며 한 번에 최대 500개까지 조회합니다.</p>
+      </form>
     </section>
-
     <section id="result" aria-live="polite"></section>
   </main>
-
   <footer><span>MIU Trace</span><span>Evidence-first product history</span></footer>
   <script src="config.js"></script><script src="assets/app.js"></script>
 </body>

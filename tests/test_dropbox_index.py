@@ -1,4 +1,4 @@
-from backend.app.dropbox_index import information_changes
+from backend.app.dropbox_index import information_changes, normalize_category
 
 
 def test_information_change_preserves_before_and_after_values():
@@ -19,3 +19,8 @@ def test_information_change_marks_missing_and_restored_values():
 
 def test_round_is_not_an_information_change():
     assert information_changes({"round": "0202"}, {"round": None}) == []
+
+
+def test_online_category_prefix_is_removed():
+    assert normalize_category("온자켓") == "자켓"
+    assert normalize_category("자켓") == "자켓"
