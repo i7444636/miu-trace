@@ -1,7 +1,7 @@
 server {
     listen 80;
     listen [::]:80;
-    server_name miu-trace.146.56.105.237.nip.io;
+    server_name miu-trace.146.56.105.237.nip.io miu-trace.146-56-105-237.sslip.io;
 
     location /api/ {
         proxy_pass http://127.0.0.1:8010;
