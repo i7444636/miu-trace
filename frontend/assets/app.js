@@ -9,7 +9,7 @@ const precisionLabel={EXACT:"정확한 시각",DATE:"날짜",MONTH:"월 단위",
 const form=document.querySelector("#search"),input=document.querySelector("#barcode"),out=document.querySelector("#result"),demoButton=document.querySelector("#demo-code");
 
 form.addEventListener("submit",async event=>{event.preventDefault();await search(input.value)});
-demoButton.addEventListener("click",async()=>{input.value="C24304";await search("C24304")});
+demoButton.addEventListener("click",async()=>{input.value="C24306";await search("C24306")});
 
 async function search(raw){
   const code=raw.trim().toUpperCase(); if(!code)return;
@@ -19,6 +19,10 @@ async function search(raw){
     if(window.MIU_TRACE_CONFIG.API_BASE_URL){
       const response=await fetch(`${window.MIU_TRACE_CONFIG.API_BASE_URL}/api/barcodes/${encodeURIComponent(code)}/timeline`,{cache:"no-store"});
       if(!response.ok)throw new Error("API 조회에 실패했습니다."); events=(await response.json()).events;
+    }else if(window.MIU_TRACE_CONFIG.STATIC_BETA_URL){
+      const response=await fetch(window.MIU_TRACE_CONFIG.STATIC_BETA_URL,{cache:"no-store"});
+      if(!response.ok)throw new Error("Google Sheets 베타 인덱스를 읽지 못했습니다.");
+      const payload=await response.json(); events=payload.events.filter(item=>item.barcode===code);
     }else events=demo[code]||[];
     render(code,events);
   }catch(error){out.innerHTML=`<div class="empty"><strong>조회하지 못했습니다</strong><p>${escapeHtml(error.message)}</p></div>`}
@@ -34,11 +38,15 @@ function render(code,events){
 function eventCard(item){
   const type=item.type||item.event_type,confidence=(item.confidence||"UNKNOWN").toUpperCase();
   const from=item.from||item.time_from,to=item.to||item.time_to,precision=item.precision||item.time_precision||"UNKNOWN";
-  return `<article class="event" data-type="${escapeHtml(type)}"><span class="timeline-node" aria-hidden="true"></span><div class="event-card"><div class="event-main"><div class="event-topline"><div class="event-title-wrap"><span class="type-icon">${icons[item.display_label]||icons[type]||"·"}</span><span class="event-title">${escapeHtml(item.label||item.display_label||type)}</span></div><span class="confidence ${confidence==="CONFIRMED"?"confirmed":""}">${confidence==="CONFIRMED"?"확정":confidence}</span></div><p class="event-time">${formatTime(from,to,precision)} <span class="precision">· ${precisionLabel[precision]||precision}</span></p>${item.before?`<div class="change"><span>${escapeHtml(item.before)}</span><span class="change-arrow">→</span><span>${escapeHtml(item.after)}</span></div>`:""}</div><div class="evidence"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.75 2.5A1.75 1.75 0 0 1 3.5.75h5.25a1.75 1.75 0 0 1 1.75 1.75v.75h2A1.75 1.75 0 0 1 14.25 5v8.5a1.75 1.75 0 0 1-1.75 1.75h-9A1.75 1.75 0 0 1 1.75 13.5Zm1.5 0v11a.25.25 0 0 0 .25.25h9a.25.25 0 0 0 .25-.25V5a.25.25 0 0 0-.25-.25h-2v6.75a.75.75 0 0 1-1.5 0v-9a.25.25 0 0 0-.25-.25H3.5a.25.25 0 0 0-.25.25Z"/></svg><span>근거 · ${escapeHtml(item.evidence||`${item.evidence_count||0}건`)}</span></div></div></article>`;
+  const change=item.before?`<div class="change"><span>${escapeHtml(item.before)}</span><span class="change-arrow">→</span><span>${escapeHtml(item.after)}</span></div>`:type==="PRICE_CHANGE"?`<div class="change"><span>${escapeHtml(item.location||"가격")}</span><span class="change-arrow">·</span><span>${formatPrice(item.after)}</span></div>`:"";
+  const evidenceText=escapeHtml(item.evidence||`${item.evidence_count||0}건`);
+  const evidence=item.source_url?`<a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener">${evidenceText}</a>`:evidenceText;
+  return `<article class="event" data-type="${escapeHtml(type)}"><span class="timeline-node" aria-hidden="true"></span><div class="event-card"><div class="event-main"><div class="event-topline"><div class="event-title-wrap"><span class="type-icon">${icons[item.display_label]||icons[type]||"·"}</span><span class="event-title">${escapeHtml(item.label||item.display_label||type)}</span></div><span class="confidence ${confidence==="CONFIRMED"?"confirmed":""}">${confidence==="CONFIRMED"?"확정":confidence}</span></div><p class="event-time">${formatTime(from,to,precision)} <span class="precision">· ${precisionLabel[precision]||precision}</span></p>${change}</div><div class="evidence"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.75 2.5A1.75 1.75 0 0 1 3.5.75h5.25a1.75 1.75 0 0 1 1.75 1.75v.75h2A1.75 1.75 0 0 1 14.25 5v8.5a1.75 1.75 0 0 1-1.75 1.75h-9A1.75 1.75 0 0 1 1.75 13.5Zm1.5 0v11a.25.25 0 0 0 .25.25h9a.25.25 0 0 0 .25-.25V5a.25.25 0 0 0-.25-.25h-2v6.75a.75.75 0 0 1-1.5 0v-9a.25.25 0 0 0-.25-.25H3.5a.25.25 0 0 0-.25.25Z"/></svg><span>근거 · ${evidence}</span></div></div></article>`;
 }
 
 function formatTime(from,to,precision){if(!from)return"시점 불명";if(precision==="RANGE"&&to)return`${dateText(from)} ~ ${dateText(to)}`;return precision==="EXACT"?dateTimeText(from):dateText(from)}
 function dateText(value){return new Intl.DateTimeFormat("ko-KR",{year:"numeric",month:"long",day:"numeric"}).format(new Date(value))}
 function dateTimeText(value){return new Intl.DateTimeFormat("ko-KR",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date(value))}
+function formatPrice(value){return value==null?"가격 미확인":`${new Intl.NumberFormat("ko-KR").format(value)}원`}
 function escapeHtml(value){return String(value??"").replace(/[&<>'"]/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[char])}
 if("serviceWorker" in navigator)navigator.serviceWorker.register("service-worker.js");

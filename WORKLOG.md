@@ -2,6 +2,25 @@
 
 Last updated: 2026-08-11 (Asia/Seoul)
 
+## Beta update — Public Google Sheets
+
+- Public CSV profiling completed for all 20 supplied worksheets.
+- Google movement parser reads the event header (date, route, quantity) and vertical barcode cells.
+- Google price parser reads date columns, barcode cells and adjacent price cells.
+- Generated 27 real supporting events for the three known-answer barcodes with zero worksheet errors.
+- GitHub Pages now reads `frontend/data/beta-events.json`, not the old hard-coded demo, for `C24306`, `HK30034`, and `YH25032085`.
+- Each event links back to its source spreadsheet and reports `DATE/HIGH`; no exact time is invented.
+- GitHub Actions refreshes the public beta index every six hours and on manual dispatch.
+- Still pending: authoritative Dropbox receiving/sales/refund events and the full Oracle-hosted index API.
+
+Observed beta counts:
+
+- `C24306`: 7 Google location events
+- `HK30034`: 7 Google location events + 1 price event (`2026-07-24`, `30,000`)
+- `YH25032085`: 11 Google location events + 1 price event (`2026-08-03`, `58,000`)
+
+The supplied movement worksheet list ends at `26/04`. Expected May/July/August 2026 movement records and second-level timestamps were not present in the public CSV views, so they remain explicitly missing rather than inferred.
+
 ## Current release
 
 - Repository: `https://github.com/i7444636/miu-trace`
@@ -70,4 +89,3 @@ The deployed page is currently in `DEMO_MODE`. Google Sheets and Dropbox are not
 ## Commit policy
 
 Each completed milestone is committed independently to `main` while the beta is being assembled. Secrets, service-account JSON, Dropbox tokens and raw company data are never committed.
-
