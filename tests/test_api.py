@@ -1,6 +1,6 @@
 import json
 from fastapi.testclient import TestClient
-from backend.app.main import app
+from backend.app.main import app, fill_event_state
 
 def test_known_barcode_timeline_is_chronological():
     response=TestClient(app).get("/api/barcodes/HK30034/timeline")
@@ -27,3 +27,13 @@ def test_batch_lookup_deduplicates_codes_and_returns_compact_results():
     payload=response.json()
     assert payload["requested"]==2
     assert [item["barcode"] for item in payload["results"]]==["HK30034","C24306"]
+
+
+def test_price_change_uses_last_known_price():
+    events = fill_event_state([
+        {"type":"RECEIVED","from":"2025-01-01","price":45000},
+        {"type":"PRICE_CHANGE","from":"2025-02-01","after":39000},
+        {"type":"PRICE_CHANGE","from":"2025-03-01","after":35000},
+    ])
+    assert events[1]["before"] == 45000
+    assert events[2]["before"] == 39000

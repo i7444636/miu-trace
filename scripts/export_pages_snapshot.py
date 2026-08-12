@@ -6,7 +6,7 @@ import sqlite3
 from collections import defaultdict
 from pathlib import Path
 
-from backend.app.main import dedupe, enforce_lifecycle, static_payload, summarize
+from backend.app.main import dedupe, enforce_lifecycle, fill_event_state, static_payload, summarize
 
 ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "var" / "dropbox-index.sqlite"
@@ -30,7 +30,7 @@ def main() -> None:
     shards: dict[str, dict] = defaultdict(dict)
     for barcode in sorted(set(products) | set(events)):
         product = products.get(barcode)
-        timeline = enforce_lifecycle(dedupe(events.get(barcode, [])), product)
+        timeline = fill_event_state(enforce_lifecycle(dedupe(events.get(barcode, [])), product))
         summary, counts = summarize(barcode, product, timeline)
         shards[shard_name(barcode)][barcode] = {"barcode":barcode,"found":True,"product":product,"current_state":{"location":(product or {}).get("location"),"status":(product or {}).get("status"),"price":(product or {}).get("price"),"updated_at":(product or {}).get("updated_at")},"summary":summary,"counts":counts,"events":timeline,"count":len(timeline),"generated_at":meta.get("generated_at"),"sales_coverage_end":meta.get("sales_coverage_end"),"google_diagnostics":[]}
     for old in OUTPUT.glob("*.json.gz"):

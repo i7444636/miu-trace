@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import gzip
 import os
 import re
 import sqlite3
@@ -17,6 +18,7 @@ from backend.app.dropbox_index import normalize_category
 
 ROOT = Path(__file__).resolve().parents[2]
 STATIC_DATA = Path(os.getenv("MIU_TRACE_DATA", ROOT / "frontend" / "data" / "beta-events.json"))
+GOOGLE_STATIC_DATA = Path(os.getenv("MIU_TRACE_GOOGLE_DATA", ROOT / "frontend" / "data" / "google-events.json.gz"))
 INDEX = Path(os.getenv("MIU_TRACE_INDEX", ROOT / "var" / "dropbox-index.sqlite"))
 PAGES_ORIGIN = os.getenv("MIU_TRACE_PAGES_ORIGIN", "https://i7444636.github.io")
 GOOGLE_CACHE_SECONDS = int(os.getenv("MIU_TRACE_GOOGLE_CACHE_SECONDS", "21600"))
@@ -38,9 +40,15 @@ def normalize(value: str) -> str:
 
 def static_payload():
     try:
-        return json.loads(STATIC_DATA.read_text(encoding="utf-8"))
+        base = json.loads(STATIC_DATA.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return {"events": [], "diagnostics": []}
+        base = {"events": [], "diagnostics": []}
+    try:
+        with gzip.open(GOOGLE_STATIC_DATA, "rt", encoding="utf-8") as handle:
+            full = json.load(handle)
+        return {"events": full.get("events", []), "diagnostics": full.get("diagnostics", []), "generated_at": full.get("generated_at")}
+    except (OSError, json.JSONDecodeError):
+        return base
 
 
 def index_query(code):
@@ -120,6 +128,23 @@ def enforce_lifecycle(events, product):
     return sorted(reconciled, key=lambda item: (item.get("from") or "", EVENT_ORDER.get(item.get("type"), 99), item.get("to") or ""))
 
 
+def fill_event_state(events):
+    """Connect exact change records to the last known value without inventing facts."""
+    current_price = None
+    enriched = []
+    for original in events:
+        event = dict(original)
+        if event.get("type") == "RECEIVED" and event.get("price") is not None:
+            current_price = event["price"]
+        elif event.get("type") == "PRICE_CHANGE":
+            if event.get("before") is None and current_price is not None:
+                event["before"] = current_price
+            if event.get("after") is not None:
+                current_price = event["after"]
+        enriched.append(event)
+    return enriched
+
+
 def summarize(code, product, events):
     counts = {kind: sum(event.get("type") == kind for event in events) for kind in ("RECEIVED", "SOLD", "REFUND", "LOCATION_CHANGE", "PRICE_CHANGE", "DISCARDED")}
     location = (product or {}).get("location") or "현재 위치 미확인"
@@ -140,7 +165,7 @@ def build_timeline(code, include_live_google=True):
     product, dropbox, meta = index_query(code)
     static = [event for event in static_payload().get("events", []) if event.get("barcode") == code]
     live_google, google_diagnostics = ([], []) if static or not include_live_google else google_events(code)
-    events = enforce_lifecycle(dedupe(dropbox + static + live_google), product)
+    events = fill_event_state(enforce_lifecycle(dedupe(dropbox + static + live_google), product))
     summary, counts = summarize(code, product, events)
     return {"barcode": code, "found": bool(product or events), "product": product, "current_state": {"location": (product or {}).get("location"), "status": (product or {}).get("status"), "price": (product or {}).get("price"), "updated_at": (product or {}).get("updated_at")}, "summary": summary, "counts": counts, "events": events, "count": len(events), "generated_at": meta.get("generated_at") or static_payload().get("generated_at"), "sales_coverage_end": meta.get("sales_coverage_end"), "google_diagnostics": google_diagnostics}
 
