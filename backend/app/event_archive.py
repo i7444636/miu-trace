@@ -55,8 +55,6 @@ def archive_events(events: list[dict], path: Path = ARCHIVE) -> dict[str, int]:
                 (fingerprint, barcode, occurred, json.dumps(archived, ensure_ascii=False, separators=(",", ":")), now, now),
             )
             inserted += cursor.rowcount
-            if not cursor.rowcount:
-                database.execute("UPDATE archived_events SET last_seen_at=? WHERE fingerprint=?", (now, fingerprint))
             seen += 1
         database.commit()
     finally:
