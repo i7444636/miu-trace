@@ -42,11 +42,11 @@ def main() -> None:
         events: dict[str, list[dict]] = defaultdict(list)
         for barcode, payload in rows_for_shard(connection, "events", name):
             events[barcode].append(json.loads(payload))
+        for event in google_events.pop(name, []):
+            events[event["barcode"]].append(event)
         if archive:
             for barcode, payload in rows_for_shard(archive, "archived_events", name):
                 events[barcode].append(json.loads(payload))
-        for event in google_events.pop(name, []):
-            events[event["barcode"]].append(event)
         payload = {}
         for barcode in sorted(set(products) | set(events)):
             product = products.get(barcode)
