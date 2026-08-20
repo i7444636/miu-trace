@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from backend.app.dropbox_index import normalize_category
-from backend.app.event_archive import archived_events_for_barcode
+from backend.app.event_archive import archived_events_for_barcode, mark_observed_events
 
 ROOT = Path(__file__).resolve().parents[2]
 STATIC_DATA = Path(os.getenv("MIU_TRACE_DATA", ROOT / "frontend" / "data" / "beta-events.json"))
@@ -179,7 +179,8 @@ def build_timeline(code, include_live_google=True):
     static = [event for event in static_payload().get("events", []) if event.get("barcode") == code]
     live_google, google_diagnostics = ([], []) if static or not include_live_google else google_events(code)
     archived = archived_events_for_barcode(code)
-    events = fill_event_state(enforce_lifecycle(dedupe(dropbox + static + live_google + archived), product))
+    current_events = mark_observed_events(dropbox + static + live_google, archived)
+    events = fill_event_state(enforce_lifecycle(dedupe(current_events + archived), product))
     summary, counts = summarize(code, product, events)
     return {"barcode": code, "found": bool(product or events), "product": product, "current_state": resolve_current_state(product, events), "summary": summary, "counts": counts, "events": events, "count": len(events), "generated_at": meta.get("generated_at") or static_payload().get("generated_at"), "sales_coverage_end": meta.get("sales_coverage_end"), "google_diagnostics": google_diagnostics}
 

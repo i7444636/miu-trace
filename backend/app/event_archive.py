@@ -70,3 +70,18 @@ def archived_events_for_barcode(barcode: str, path: Path = ARCHIVE) -> list[dict
         return [json.loads(row[0]) for row in database.execute("SELECT payload FROM archived_events WHERE barcode=? ORDER BY occurred", (barcode,))]
     finally:
         database.close()
+
+
+def mark_observed_events(events: list[dict], archived: list[dict]) -> list[dict]:
+    """Annotate live source events that have already been persisted in the archive."""
+    archived_by_fingerprint = {event.get("archive_fingerprint"): event for event in archived}
+    marked = []
+    for original in events:
+        event = dict(original)
+        archived_event = archived_by_fingerprint.get(event_fingerprint(event))
+        if archived_event:
+            event["archived"] = True
+            event["archive_first_seen_at"] = archived_event.get("archive_first_seen_at")
+            event["archive_fingerprint"] = archived_event.get("archive_fingerprint")
+        marked.append(event)
+    return marked

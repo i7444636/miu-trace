@@ -8,7 +8,7 @@ from pathlib import Path
 
 from backend.app.main import dedupe, enforce_lifecycle, fill_event_state, static_payload, summarize
 from backend.app.main import resolve_current_state
-from backend.app.event_archive import ARCHIVE
+from backend.app.event_archive import ARCHIVE, mark_observed_events
 
 ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "var" / "dropbox-index.sqlite"
@@ -40,13 +40,19 @@ def main() -> None:
     for name in SHARDS:
         products = {barcode: json.loads(payload) for barcode, payload in rows_for_shard(connection, "products", name)}
         events: dict[str, list[dict]] = defaultdict(list)
+        archived_events: dict[str, list[dict]] = defaultdict(list)
         for barcode, payload in rows_for_shard(connection, "events", name):
             events[barcode].append(json.loads(payload))
         for event in google_events.pop(name, []):
             events[event["barcode"]].append(event)
         if archive:
             for barcode, payload in rows_for_shard(archive, "archived_events", name):
-                events[barcode].append(json.loads(payload))
+                archived_events[barcode].append(json.loads(payload))
+        for barcode, current in list(events.items()):
+            events[barcode] = mark_observed_events(current, archived_events.get(barcode, [])) + archived_events.get(barcode, [])
+        for barcode, stored in archived_events.items():
+            if barcode not in events:
+                events[barcode] = stored
         payload = {}
         for barcode in sorted(set(products) | set(events)):
             product = products.get(barcode)
