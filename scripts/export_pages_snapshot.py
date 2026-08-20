@@ -16,29 +16,45 @@ def shard_name(barcode: str) -> str:
     first = (barcode[:1] or "_").upper()
     return first if first.isascii() and first.isalnum() else "_"
 
+
+SHARDS = [str(value) for value in range(10)] + [chr(value) for value in range(ord("A"), ord("Z") + 1)] + ["_"]
+
+
+def rows_for_shard(connection, table, shard):
+    pattern = f"{shard}*" if shard != "_" else "[^0-9A-Za-z]*"
+    return connection.execute(f"SELECT barcode,payload FROM {table} WHERE barcode GLOB ?", (pattern,))
+
 def main() -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(f"file:{INDEX.as_posix()}?mode=ro", uri=True)
-    products = {row[0]: json.loads(row[1]) for row in connection.execute("SELECT barcode,payload FROM products")}
-    events: dict[str, list[dict]] = defaultdict(list)
-    for barcode, payload in connection.execute("SELECT barcode,payload FROM events ORDER BY barcode,occurred"):
-        events[barcode].append(json.loads(payload))
     meta = dict(connection.execute("SELECT key,value FROM meta"))
-    connection.close()
+    google_events: dict[str, list[dict]] = defaultdict(list)
     for event in static_payload().get("events", []):
-        events[event["barcode"]].append(event)
-    shards: dict[str, dict] = defaultdict(dict)
-    for barcode in sorted(set(products) | set(events)):
-        product = products.get(barcode)
-        timeline = fill_event_state(enforce_lifecycle(dedupe(events.get(barcode, [])), product))
-        summary, counts = summarize(barcode, product, timeline)
-        shards[shard_name(barcode)][barcode] = {"barcode":barcode,"found":True,"product":product,"current_state":{"location":(product or {}).get("location"),"status":(product or {}).get("status"),"price":(product or {}).get("price"),"updated_at":(product or {}).get("updated_at")},"summary":summary,"counts":counts,"events":timeline,"count":len(timeline),"generated_at":meta.get("generated_at"),"sales_coverage_end":meta.get("sales_coverage_end"),"google_diagnostics":[]}
+        google_events[shard_name(event["barcode"])].append(event)
     for old in OUTPUT.glob("*.json.gz"):
         old.unlink()
-    for name, payload in shards.items():
+    total = written = 0
+    for name in SHARDS:
+        products = {barcode: json.loads(payload) for barcode, payload in rows_for_shard(connection, "products", name)}
+        events: dict[str, list[dict]] = defaultdict(list)
+        for barcode, payload in rows_for_shard(connection, "events", name):
+            events[barcode].append(json.loads(payload))
+        for event in google_events.pop(name, []):
+            events[event["barcode"]].append(event)
+        payload = {}
+        for barcode in sorted(set(products) | set(events)):
+            product = products.get(barcode)
+            timeline = fill_event_state(enforce_lifecycle(dedupe(events.get(barcode, [])), product))
+            summary, counts = summarize(barcode, product, timeline)
+            payload[barcode] = {"barcode":barcode,"found":True,"product":product,"current_state":{"location":(product or {}).get("location"),"status":(product or {}).get("status"),"price":(product or {}).get("price"),"updated_at":(product or {}).get("updated_at")},"summary":summary,"counts":counts,"events":timeline,"count":len(timeline),"generated_at":meta.get("generated_at"),"sales_coverage_end":meta.get("sales_coverage_end"),"google_diagnostics":[]}
+        if not payload:
+            continue
         with gzip.open(OUTPUT / f"{name}.json.gz", "wt", encoding="utf-8", compresslevel=9) as handle:
             json.dump(payload, handle, ensure_ascii=False, separators=(",", ":"))
-    print(json.dumps({"products":sum(map(len,shards.values())),"shards":len(shards),"bytes":sum(p.stat().st_size for p in OUTPUT.glob('*.gz'))}))
+        total += len(payload)
+        written += 1
+    connection.close()
+    print(json.dumps({"products":total,"shards":written,"bytes":sum(p.stat().st_size for p in OUTPUT.glob('*.gz'))}))
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,5 @@
 [Unit]
-Description=Refresh MIU Trace public Google Sheets beta index
+Description=Refresh MIU Trace Dropbox and Google Sheets indexes
 After=network-online.target
 
 [Service]
@@ -11,4 +11,6 @@ EnvironmentFile=/etc/miu-trace.env
 Environment=PYTHONPATH=/opt/miu-trace
 ExecStart=/opt/miu-trace/.venv/bin/python scripts/sync_dropbox_beta.py
 ExecStart=/opt/miu-trace/.venv/bin/python scripts/sync_google_beta.py
-ReadWritePaths=/opt/miu-trace/frontend/data /opt/miu-trace/var
+ExecStart=/opt/miu-trace/.venv/bin/python scripts/export_pages_snapshot.py
+ExecStart=/opt/miu-trace/.venv/bin/python scripts/publish_pages_data.py
+ReadWritePaths=/opt/miu-trace/.git /opt/miu-trace/frontend/data /opt/miu-trace/var

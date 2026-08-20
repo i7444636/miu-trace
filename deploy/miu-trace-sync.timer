@@ -1,11 +1,11 @@
 [Unit]
-Description=Refresh MIU Trace beta index every six hours
+Description=Refresh MIU Trace indexes every hour
 
 [Timer]
 OnBootSec=5min
-OnUnitActiveSec=6h
+OnUnitActiveSec=1h
 Persistent=true
-RandomizedDelaySec=5min
+RandomizedDelaySec=2min
 
 [Install]
 WantedBy=timers.target
