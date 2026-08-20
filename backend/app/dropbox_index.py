@@ -149,6 +149,7 @@ def build_index(paths: list[Path]):
     sales = defaultdict(list)
     diagnostics = []
     finalized_coverage_end = None
+    common_sales_coverage_end = None
     for path in sorted(paths):
         is_store = "전매장매입매출" in path.name
         period = workbook_period(path)
@@ -194,6 +195,7 @@ def build_index(paths: list[Path]):
                     quantity = money(values.get(7))
                     if not BARCODE.match(code) or not occurred or not quantity:
                         continue
+                    common_sales_coverage_end = max(filter(None, [common_sales_coverage_end, occurred]))
                     sales[code].append({
                         "barcode": code, "type": "REFUND" if quantity < 0 else "SOLD",
                         "label": "환불" if quantity < 0 else "판매", "from": occurred,
@@ -257,7 +259,8 @@ def build_index(paths: list[Path]):
                 event.pop("fallback", None)
                 events.append(event)
     events.sort(key=lambda event: (event["barcode"], event.get("from") or "", event["type"]))
-    return {"generated_at": datetime.now().astimezone().isoformat(timespec="seconds"), "mode": "DROPBOX_AUTHORITY_BETA", "sales_coverage_end": finalized_coverage_end, "products": products, "events": events, "diagnostics": diagnostics}
+    coverage_end = max(filter(None, [finalized_coverage_end, common_sales_coverage_end]), default=None)
+    return {"generated_at": datetime.now().astimezone().isoformat(timespec="seconds"), "mode": "DROPBOX_AUTHORITY_BETA", "sales_coverage_end": coverage_end, "products": products, "events": events, "diagnostics": diagnostics}
 
 
 def write_index(paths, output):
