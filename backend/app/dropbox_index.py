@@ -220,7 +220,9 @@ def build_index(paths: list[Path]):
             unique[key] = observation
         ordered = sorted(unique.values(), key=lambda item: item.get("as_of") or "")
         latest = ordered[-1]
-        status = "폐기" if latest.get("location") == "폐기" else "판매됨" if any(e["type"] == "SOLD" for e in sales.get(code, [])) and not any(e["type"] == "REFUND" for e in sales.get(code, [])) else "보유"
+        sale_history = sorted(sales.get(code, []), key=lambda event: (event.get("from") or "", event.get("source_file") or "", event.get("row") or 0))
+        latest_sale_state = sale_history[-1].get("type") if sale_history else None
+        status = "폐기" if latest.get("location") == "폐기" else "판매됨" if latest_sale_state == "SOLD" else "보유"
         products[code] = {key: latest.get(key) for key in ("barcode", "received_at", "location", "description", "price", "quantity", "category", "updated_at")}
         products[code]["status"] = status
         received = next((item.get("received_at") for item in ordered if item.get("received_at")), None)
