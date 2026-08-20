@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from backend.app.dropbox_index import normalize_category
+from backend.app.event_archive import archived_events_for_barcode
 
 ROOT = Path(__file__).resolve().parents[2]
 STATIC_DATA = Path(os.getenv("MIU_TRACE_DATA", ROOT / "frontend" / "data" / "beta-events.json"))
@@ -161,13 +162,26 @@ def summarize(code, product, events):
     return " ".join(pieces), counts
 
 
+def resolve_current_state(product, events):
+    state = {"location": (product or {}).get("location"), "status": (product or {}).get("status"), "price": (product or {}).get("price"), "updated_at": (product or {}).get("updated_at")}
+    if state["location"] == "폐기":
+        state["status"] = "폐기"
+        return state
+    transactions = [event for event in events if event.get("type") in {"SOLD", "REFUND"}]
+    if transactions:
+        latest = max(transactions, key=lambda event: (event.get("from") or "", event.get("source_file") or "", event.get("row") or 0, event.get("archive_first_seen_at") or ""))
+        state["status"] = "판매됨" if latest.get("type") == "SOLD" else "보유"
+    return state
+
+
 def build_timeline(code, include_live_google=True):
     product, dropbox, meta = index_query(code)
     static = [event for event in static_payload().get("events", []) if event.get("barcode") == code]
     live_google, google_diagnostics = ([], []) if static or not include_live_google else google_events(code)
-    events = fill_event_state(enforce_lifecycle(dedupe(dropbox + static + live_google), product))
+    archived = archived_events_for_barcode(code)
+    events = fill_event_state(enforce_lifecycle(dedupe(dropbox + static + live_google + archived), product))
     summary, counts = summarize(code, product, events)
-    return {"barcode": code, "found": bool(product or events), "product": product, "current_state": {"location": (product or {}).get("location"), "status": (product or {}).get("status"), "price": (product or {}).get("price"), "updated_at": (product or {}).get("updated_at")}, "summary": summary, "counts": counts, "events": events, "count": len(events), "generated_at": meta.get("generated_at") or static_payload().get("generated_at"), "sales_coverage_end": meta.get("sales_coverage_end"), "google_diagnostics": google_diagnostics}
+    return {"barcode": code, "found": bool(product or events), "product": product, "current_state": resolve_current_state(product, events), "summary": summary, "counts": counts, "events": events, "count": len(events), "generated_at": meta.get("generated_at") or static_payload().get("generated_at"), "sales_coverage_end": meta.get("sales_coverage_end"), "google_diagnostics": google_diagnostics}
 
 
 @app.get("/api/health")

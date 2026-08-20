@@ -1,6 +1,6 @@
 import json
 from fastapi.testclient import TestClient
-from backend.app.main import app, fill_event_state
+from backend.app.main import app, fill_event_state, resolve_current_state
 
 def test_known_barcode_timeline_is_chronological():
     response=TestClient(app).get("/api/barcodes/HK30034/timeline")
@@ -37,3 +37,9 @@ def test_price_change_uses_last_known_price():
     ])
     assert events[1]["before"] == 45000
     assert events[2]["before"] == 39000
+
+
+def test_current_state_uses_latest_sale_or_refund_event():
+    product = {"status": "보유", "location": "성수"}
+    assert resolve_current_state(product, [{"type": "SOLD", "from": "2026-08-19"}])["status"] == "판매됨"
+    assert resolve_current_state(product, [{"type": "SOLD", "from": "2026-08-19"}, {"type": "REFUND", "from": "2026-08-20"}])["status"] == "보유"

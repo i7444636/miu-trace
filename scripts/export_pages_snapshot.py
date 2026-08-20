@@ -7,6 +7,8 @@ from collections import defaultdict
 from pathlib import Path
 
 from backend.app.main import dedupe, enforce_lifecycle, fill_event_state, static_payload, summarize
+from backend.app.main import resolve_current_state
+from backend.app.event_archive import ARCHIVE
 
 ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "var" / "dropbox-index.sqlite"
@@ -27,6 +29,7 @@ def rows_for_shard(connection, table, shard):
 def main() -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(f"file:{INDEX.as_posix()}?mode=ro", uri=True)
+    archive = sqlite3.connect(f"file:{ARCHIVE.as_posix()}?mode=ro", uri=True) if ARCHIVE.exists() else None
     meta = dict(connection.execute("SELECT key,value FROM meta"))
     google_events: dict[str, list[dict]] = defaultdict(list)
     for event in static_payload().get("events", []):
@@ -39,6 +42,9 @@ def main() -> None:
         events: dict[str, list[dict]] = defaultdict(list)
         for barcode, payload in rows_for_shard(connection, "events", name):
             events[barcode].append(json.loads(payload))
+        if archive:
+            for barcode, payload in rows_for_shard(archive, "archived_events", name):
+                events[barcode].append(json.loads(payload))
         for event in google_events.pop(name, []):
             events[event["barcode"]].append(event)
         payload = {}
@@ -46,7 +52,7 @@ def main() -> None:
             product = products.get(barcode)
             timeline = fill_event_state(enforce_lifecycle(dedupe(events.get(barcode, [])), product))
             summary, counts = summarize(barcode, product, timeline)
-            payload[barcode] = {"barcode":barcode,"found":True,"product":product,"current_state":{"location":(product or {}).get("location"),"status":(product or {}).get("status"),"price":(product or {}).get("price"),"updated_at":(product or {}).get("updated_at")},"summary":summary,"counts":counts,"events":timeline,"count":len(timeline),"generated_at":meta.get("generated_at"),"sales_coverage_end":meta.get("sales_coverage_end"),"google_diagnostics":[]}
+            payload[barcode] = {"barcode":barcode,"found":True,"product":product,"current_state":resolve_current_state(product,timeline),"summary":summary,"counts":counts,"events":timeline,"count":len(timeline),"generated_at":meta.get("generated_at"),"sales_coverage_end":meta.get("sales_coverage_end"),"google_diagnostics":[]}
         if not payload:
             continue
         with gzip.open(OUTPUT / f"{name}.json.gz", "wt", encoding="utf-8", compresslevel=9) as handle:
@@ -54,6 +60,8 @@ def main() -> None:
         total += len(payload)
         written += 1
     connection.close()
+    if archive:
+        archive.close()
     print(json.dumps({"products":total,"shards":written,"bytes":sum(p.stat().st_size for p in OUTPUT.glob('*.gz'))}))
 
 if __name__ == "__main__":
