@@ -129,6 +129,21 @@ def information_changes(before, after):
     return changes
 
 
+def change_timestamp(before, after, fallback_from, fallback_to):
+    """Use an authoritative row update date only when it changed with the snapshot.
+
+    Monthly files normally establish only a range.  The `updated_at` field in the
+    later row can promote that range to an exact date when it is newer than the
+    prior row and falls after the prior observation; otherwise preserve the range.
+    """
+    candidate = after.get("updated_at")
+    if not candidate or candidate == before.get("updated_at"):
+        return fallback_from, fallback_to, "RANGE", "HIGH", False
+    if fallback_from and candidate < fallback_from:
+        return fallback_from, fallback_to, "RANGE", "HIGH", False
+    return candidate, None, "DATE", "CONFIRMED", True
+
+
 def build_index(paths: list[Path]):
     snapshots = defaultdict(list)
     sales = defaultdict(list)
@@ -217,7 +232,11 @@ def build_index(paths: list[Path]):
                 continue
             if before.get("location") != after.get("location"):
                 event_type = "DISCARDED" if after.get("location") == "폐기" else "LOCATION_CHANGE"
-                events.append({"barcode": code, "type": event_type, "label": "폐기" if event_type == "DISCARDED" else "위치 이동", "from": time_from, "to": time_to, "precision": "RANGE", "confidence": "HIGH", "before": before.get("location"), "after": after.get("location"), "source_family": "DROPBOX_COMMON_SALES", "evidence": f"Dropbox 월별 입고 스냅샷 비교 · {before['source_file']} → {after['source_file']}"})
+                event_from, event_to, precision, confidence, used_updated_at = change_timestamp(before, after, time_from, time_to)
+                evidence = f"Dropbox 월별 입고 스냅샷 비교 · {before['source_file']} → {after['source_file']}"
+                if used_updated_at:
+                    evidence += f" · 이후 원장 수정일 {event_from}"
+                events.append({"barcode": code, "type": event_type, "label": "폐기" if event_type == "DISCARDED" else "위치 이동", "from": event_from, "to": event_to, "precision": precision, "confidence": confidence, "before": before.get("location"), "after": after.get("location"), "source_family": "DROPBOX_COMMON_SALES", "evidence": evidence})
             if before.get("price") != after.get("price") and after.get("price") is not None:
                 events.append({"barcode": code, "type": "PRICE_CHANGE", "label": "가격 변경", "from": time_from, "to": time_to, "precision": "RANGE", "confidence": "HIGH", "before": before.get("price"), "after": after.get("price"), "location": after.get("location"), "source_family": "DROPBOX_COMMON_SALES", "evidence": f"Dropbox 월별 입고 스냅샷 비교 · {before['source_file']} → {after['source_file']}"})
             changes = information_changes(before, after)

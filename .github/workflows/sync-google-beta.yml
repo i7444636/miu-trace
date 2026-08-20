@@ -5,6 +5,8 @@ on:
     - cron: "17 */6 * * *"
 permissions:
   contents: write
+  pages: write
+  id-token: write
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -22,4 +24,24 @@ jobs:
           git add frontend/data/google-events.json.gz
           git diff --cached --quiet || git commit -m "Sync public Google Sheets beta index"
           git push
+  deploy-pages:
+    needs: sync
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
 
